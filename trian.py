@@ -5,13 +5,11 @@ from torch.utils.data import Dataset, DataLoader
 import json
 from tqdm import tqdm
 import wandb
-from model import build_transformer
 import os
+from model import build_transformer
 
-
+# Initialize WandB
 checkpoints_dir = "checkpoints"
-
-
 wandb.init(
     project="spell-checker",
     name="Run 2 - Updated Dataset",
@@ -27,6 +25,7 @@ wandb.init(
     }
 )
 
+# Define vocabulary
 character_vocab = {char: idx for idx, char in enumerate(
     ['<pad>', '<sos>', '<eos>', '<unk>'] + [chr(i) for i in range(97, 123)])}
 vocab_size = len(character_vocab)
@@ -34,6 +33,13 @@ pad_idx = character_vocab['<pad>']
 sos_idx = character_vocab['<sos>']
 eos_idx = character_vocab['<eos>']
 
+# Save tokenizer
+def save_tokenizer(vocab, filepath="tokenizer.json"):
+    with open(filepath, "w") as f:
+        json.dump(vocab, f)
+    print(f"Tokenizer saved to {filepath}")
+
+# Dataset class
 class SpellCheckDataset(Dataset):
     def __init__(self, jsonl_path, vocab, max_len=20):
         self.data = self.load_jsonl(jsonl_path)
@@ -61,6 +67,7 @@ class SpellCheckDataset(Dataset):
         tgt = self.tokenize_word(correct)
         return torch.tensor(self.pad_sequence(src)), torch.tensor(self.pad_sequence(tgt))
 
+# Hyperparameters
 config = wandb.config
 src_seq_len = tgt_seq_len = 20
 d_model = config.d_model
@@ -72,10 +79,12 @@ batch_size = config.batch_size
 epochs = config.epochs
 learning_rate = config.learning_rate
 
+# Load dataset
 dataset_path = "data/dataset.jsonl"
 dataset = SpellCheckDataset(dataset_path, character_vocab)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
+# Initialize model
 model = build_transformer(
     src_vocab_size=vocab_size,
     tgt_vocab_size=vocab_size,
@@ -88,12 +97,20 @@ model = build_transformer(
     d_ff=d_ff
 ).to('cuda' if torch.cuda.is_available() else 'cpu')
 
+# Define loss and optimizer
 criterion = nn.CrossEntropyLoss(ignore_index=pad_idx)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
+# Training function
 def train():
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model.to(device)
+
+    # Save tokenizer at the beginning
+    tokenizer_save_path = os.path.join(checkpoints_dir, "tokenizer.json")
+    os.makedirs(checkpoints_dir, exist_ok=True)
+    save_tokenizer(character_vocab, tokenizer_save_path)
+    wandb.save(tokenizer_save_path)
 
     for epoch in range(epochs):
         model.train()

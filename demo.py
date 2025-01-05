@@ -28,7 +28,7 @@ def load_model():
         dropout=dropout,
         d_ff=d_ff
     )
-    model.load_state_dict(torch.load("spell_check_model.pth", map_location=torch.device('cpu')))
+    model.load_state_dict(torch.load("checkpoints/spell_check_model_epoch_29.pth", map_location=torch.device('cpu')))
     model.eval()
     return model
 

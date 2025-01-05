@@ -6,9 +6,15 @@ import json
 from tqdm import tqdm
 import wandb
 from model import build_transformer
+import os
+
+
+checkpoints_dir = "checkpoints"
+
 
 wandb.init(
     project="spell-checker",
+    name="Run 2 - Updated Dataset",
     config={
         "learning_rate": 0.0005,
         "epochs": 50,
@@ -119,9 +125,11 @@ def train():
         wandb.log({"epoch_loss": avg_loss})
         print(f"Epoch {epoch + 1}/{epochs}, Loss: {avg_loss:.4f}")
 
-    torch.save(model.state_dict(), "spell_check_model.pth")
-    wandb.save("spell_check_model.pth")
-    print("Model saved and logged to W&B!")
+        # Save model checkpoint
+        checkpoint_path = os.path.join(checkpoints_dir, f"spell_check_model_epoch_{epoch + 1}.pth")
+        torch.save(model.state_dict(), checkpoint_path)
+        wandb.save(checkpoint_path)
+        print(f"Model checkpoint saved and logged to W&B as {checkpoint_path}!")
 
 if __name__ == "__main__":
     train()

@@ -10,11 +10,11 @@ sos_idx = character_vocab['<sos>']
 eos_idx = character_vocab['<eos>']
 
 src_seq_len = tgt_seq_len = 20
-d_model = 128
-num_layers = 3
-num_heads = 4
+d_model = 256
+num_layers = 6
+num_heads = 8
 dropout = 0.1
-d_ff = 512
+d_ff = 1024
 
 def load_model():
     model = build_transformer(
